@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE properties SYSTEM 'http://java.sun.com/dtd/properties.dtd'>
+<properties>
+    <comment>Changes to this file probably require changes to the MOJO that uses it.</comment>
+    <entry key="header">
+/** 
+ * BTstack Client Library
+ */
+
+package {0};
+public class {1} extends BTstackClient '{'
+
+    </entry>
+    <entry key="command">
+    public boolean {0}({1}) '{'
+        // {2}
+        int command_len = {3};
+        byte[] command = new byte[command_len];
+        Util.storeBt16(command, 0, Util.opcode({4}, {5}));
+        int offset = 2;
+        Util.storeByte(command, offset, command_len - 3);
+        offset++;
+{6}
+        Packet packet = new Packet(Packet.HCI_COMMAND_PACKET, 0, command, command.length);
+        return sendPacket(packet);
+    '}'
+        
+    </entry>
+    <entry key="footer">
+'}'
+    </entry>
+    <entry key="event_factory">
+package {0};
+
+import {0}.event.*;
+
+public class EventFactory '{'
+
+    /** @brief event codes */
+
+{1}
+    public static Event eventForPacket(Packet packet) '{'
+        int eventType = Util.readByte(packet.getBuffer(), 0);
+        switch (eventType) '{'
+{2}        
+        case 0x3e:  // LE_META_EVENT
+            int subEventType = Util.readByte(packet.getBuffer(), 2);
+            switch (subEventType) '{'
+{3}            
+            default:
+                return new Event(packet);
+            }
+
+        default:
+            return new Event(packet);
+        }
+    }
+}   
+    </entry>
+    <entry key="event_factory_event">
+        case {0}:
+            return new {1}(packet);
+    </entry>
+    <entry key="event_factory_subevent">
+            case {0}:
+                return new {1}(packet);        
+    </entry>
+    <entry key="event">
+package {0}.event;
+
+import {0}.*;
+
+public class {1} extends Event '{'
+
+    public {1}(Packet packet) '{'
+        super(packet);
+    }
+    {2}
+    {3}
+}        
+    </entry>
+    <entry key="event_getter">
+    public {0} get{1}() '{'
+        {2}
+    }
+    </entry>
+    <entry key="event_getter_data">
+int len = get{0}();
+        byte[] result = new byte[len];
+        System.arraycopy(data, {1}, result, 0, len);
+        return result;</entry>
+    <entry key="event_to_string">
+    @Override
+    public String toString() '{'
+        StringBuilder t = new StringBuilder();
+        t.append("{0} &lt; type = ");
+        t.append(String.format("0x%02x, ", getEventType()));
+        t.append(getEventType());
+{1}        t.append(" >");
+        return t.toString();
+    }            
+    </entry>
+    <entry key="define_string">    public static final int {0} = {1};
+</entry>
+</properties>
