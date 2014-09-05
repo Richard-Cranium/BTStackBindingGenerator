@@ -123,7 +123,7 @@ public class BindingFormatter {
         paramStoreMap.put("X", new MessageFormat("Util.storeBytes(command, offset, {0}.getBytes());"));
         paramStoreMap.put("Y", new MessageFormat("Util.storeBytes(command, offset, {0}.getBytes());"));
         paramStoreMap.put("Z", new MessageFormat("Util.storeBytes(command, offset, {0}.getBytes());"));
-        paramStoreMap.put("N", new MessageFormat("Util.storeBytes(command, offset, {0}, 248);"));
+        paramStoreMap.put("N", new MessageFormat("Util.storeString(command, offset, {0}, 248);"));
         
         specialParamType.add("L");
         specialParamType.add("J");
@@ -173,7 +173,8 @@ public class BindingFormatter {
         StringBuilder sizeVar = new StringBuilder();
         StringBuilder storeParams = new StringBuilder();
         String lengthName = "";
-        for (int i = 0; i < ci.getFormat().length(); i++) {
+        int maxItems = Math.min(ci.getFormat().length(), ci.getParms().size());
+        for (int i = 0; i < maxItems; i++) {
             String paramType = ci.getFormat().substring(i, i+1);
             String argName = ci.getParms().get(i);
             String argType = btStackType2JavaType.get(paramType);

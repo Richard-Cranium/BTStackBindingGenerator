@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.regex.Pattern;
 public class CommandParser implements Iterable<CommandInfo> {
 
     private static final String PARAM_PATTERN = ".*@param\\s*(\\w*)\\s*";
-    private static final String DECL_PATTERN = "const\\s+hci_cmd_t\\s+(\\w+)\\s+=.*";
+    private static final String DECL_PATTERN = "const\\s+hci_cmd_t\\s+(\\w+)\\s*=.*";
     private static final String DEF_OPCODE_PATTERN = "\\s*OPCODE\\(\\s*(\\w+)\\s*,\\s+(\\w+)\\s*\\)\\s*,\\s\\\"(\\w*)\\\".*";
 
     private final Pattern paramPattern;
@@ -47,6 +48,7 @@ public class CommandParser implements Iterable<CommandInfo> {
                 if (pm.matches()) {
                     if (pm.groupCount() == 1) {
                         parms.add(NameUtilities.getInstance().camelCaseVar(pm.group(1)));
+                        continue;
                     }
                 }
                 Matcher declm = declPattern.matcher(line);
@@ -55,9 +57,18 @@ public class CommandParser implements Iterable<CommandInfo> {
                     if (cmdName.endsWith("Cmd")) {
                         cmdName = cmdName.substring(0,cmdName.lastIndexOf("Cmd"));
                     }
+                    continue;
                 }
                 Matcher opm = opcodePattern.matcher(line);
                 if (opm.matches()) {
+                    String format = opm.group(3);
+                    if (format.length() != parms.size()) {
+                        // well, format length wins in the python code.
+                        parms.clear();
+                        for (int i = 0; i < format.length(); i++) {
+                            parms.add(MessageFormat.format("arg{0}", i+1));
+                        }
+                    }
                     CommandInfo info = new CommandInfo(parms, cmdName, opm.group(1), opm.group(2), opm.group(3));
                     commands.add(info);
                     parms.clear();

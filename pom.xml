@@ -7,7 +7,10 @@
     <version>1.0-SNAPSHOT</version>
     <name>BTStack Binding Generator Maven Mojo</name>
     <url>http://maven.apache.org</url>
-
+    <description>
+        This MOJO will create the required java base classes from parsing the
+        C source code found in the BTStack Subversion checkout or source archive.
+    </description>
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
