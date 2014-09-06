@@ -43,7 +43,8 @@ public class BindingFormatter {
         event_getter,
         event_getter_data,
         event_to_string,
-        define_string
+        define_string,
+        event_getter_remaining_data,
     }
 
     private final Map<String, String> btStackType2JavaType;
@@ -77,6 +78,7 @@ public class BindingFormatter {
         btStackType2JavaType.put("N", "String");
         btStackType2JavaType.put("P", "byte []");
         btStackType2JavaType.put("A", "byte []");
+        btStackType2JavaType.put("R", "byte []");
         btStackType2JavaType.put("S", "byte []");
         btStackType2JavaType.put("J", "int");
         btStackType2JavaType.put("L", "int");
@@ -155,7 +157,6 @@ public class BindingFormatter {
                 for (String defKey : definesUsed) {
                     writeToWriter(writer, formatters.get(Keys.define_string), defKey, dp.getValue(defKey));
                 }
-                System.out.println(formatters.get(Keys.footer).toPattern());
                 writeToWriter(writer, formatters.get(Keys.footer).toPattern());
             }
             format(ep, dp);
@@ -247,11 +248,11 @@ public class BindingFormatter {
     private void format(EventInfo ei) throws IOException {
         LOG.log(Level.INFO, "Formatting {0}", ei);
         String eventName = NameUtilities.getInstance().camelCase(ei.getKey());
-        LOG.log(Level.INFO, "eventName is {0}", eventName);
+        LOG.log(Level.FINE, "eventName is {0}", eventName);
         File outfile = createFile(EVENT_PACKAGE, eventName);
         try (FileWriter writer = new FileWriter(outfile)) {
             int offset = 2;
-            int size = 0;
+            int size;
             StringBuilder getters = new StringBuilder();
             String lengthName = "";
             String access;
@@ -262,12 +263,18 @@ public class BindingFormatter {
                 if (specialParamType.contains(f)) {
                     lengthName = NameUtilities.getInstance().camelCase(arg);
                 }
-                if (f.equals("V")) {
-                    access = formatters.get(Keys.event_getter_data).format(new Object[] {lengthName, offset});
-                    size = 0;
-                } else {
-                    access = paramReadMap.get(f).format(new Object[] {offset});
-                    size = type2size.get(f);
+                switch (f) {
+                    case "V":
+                        access = formatters.get(Keys.event_getter_data).format(new Object[] {lengthName, offset});
+                        size = 0;
+                        break;
+                    case "R":
+                        access = formatters.get(Keys.event_getter_remaining_data).format(new Object[] {offset});
+                        size = 0;
+                        break;
+                    default:
+                        access = paramReadMap.get(f).format(new Object[] {offset});
+                        size = type2size.get(f);
                 }
                 getters.append(formatters.get(Keys.event_getter).format(new Object[]{btStackType2JavaType.get(f), NameUtilities.getInstance().camelCase(arg), access}));
                 offset += size;
@@ -319,9 +326,42 @@ public class BindingFormatter {
         } catch (Exception ex) {
             throw new MojoExecutionException("Unable to read formatter property file.", ex);
         }
+        // Do a sanity check to make sure that every member of the enum has a key in the file
+        // and that every key in the file has a enum to match.
+        // A enum with no matching key is an error.  A key with no enum indicates that you forgot
+        // to remove an unused key from the property file and worthy of a warning.
+        Set<String> ekeys = new HashSet<>();
+        Set<String> pfkeys = new HashSet<>(formatTemplates.stringPropertyNames());
         for (Keys key : Keys.values()) {
             LOG.log(Level.INFO, "Processing key {0}", key);
-            formatters.put(key, new MessageFormat(formatTemplates.getProperty(key.toString())));
+            ekeys.add(key.toString());
+            String prop = formatTemplates.getProperty(key.toString());
+            if (prop != null) {
+                formatters.put(key, new MessageFormat(prop));
+            }
         }
+        if (ekeys.containsAll(formatTemplates.stringPropertyNames()) && formatTemplates.stringPropertyNames().containsAll(ekeys)) {
+            LOG.info("Template properties file keys match enumeration.");
+        } else {
+            Set<String> tpk = new TreeSet<>(formatTemplates.stringPropertyNames());
+            tpk.removeAll(ekeys);
+            if (!tpk.isEmpty()) {
+                LOG.warning("The following properties file keys do not have matching enumeration keys:");
+                for (String badk : tpk) {
+                    LOG.log(Level.WARNING, "property file key: {0}", badk);
+                }
+            }
+            Set<String> tek = new TreeSet<>(ekeys);
+            tek.removeAll(formatTemplates.stringPropertyNames());
+            if (!tek.isEmpty()) {
+                LOG.severe("The following enumeration keys do not have matching keys in the properties file:");
+                for (String badk : tek) {
+                    LOG.log(Level.SEVERE, "enumeration key: {0}", badk);
+                }
+                // You'll get a NPE later if all the keys are in use, so fail now.
+                throw new MojoExecutionException("The format properties xml file is missing required entries.\nCheck the logs for a listing.");
+            }
+        }
+        
     }
 }

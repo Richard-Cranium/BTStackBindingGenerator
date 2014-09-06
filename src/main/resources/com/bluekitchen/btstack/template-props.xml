@@ -102,4 +102,9 @@ int len = get{0}();
     </entry>
     <entry key="define_string">    public static final int {0} = {1};
 </entry>
+<entry key="event_getter_remaining_data">
+int len = getPayloadLen() - {0};
+        byte[] result = new byte[len];
+        System.arraycopy(data, {0}, result, 0, len);
+        return result;</entry>
 </properties>

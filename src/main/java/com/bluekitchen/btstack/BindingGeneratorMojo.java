@@ -29,8 +29,8 @@ public class BindingGeneratorMojo extends AbstractMojo {
      * This is the directory into which the generated java source will be
      * placed.
      */
-    @Parameter(defaultValue = "target/generated-sources/bindingGenerator", required = true, alias = "outputDirectory")
-    private File destRoot;
+    @Parameter(defaultValue = "target/generated-sources/bindingGenerator", required = true)
+    private File outputDirectory;
 
     /**
      * This is the directory containing the checked-out 'C' source for BTStack.
@@ -64,13 +64,15 @@ public class BindingGeneratorMojo extends AbstractMojo {
             ep.read(new File(btStackRoot, HCI_CMDS_H));
 
             if (project != null) {
-                project.addCompileSourceRoot(destRoot.getAbsolutePath());
+                project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
             }
             
-            BindingFormatter bf = new BindingFormatter(destRoot);
+            BindingFormatter bf = new BindingFormatter(outputDirectory);
             bf.format(dp, ep, cp);
             
         } catch (IOException ex) {
+            throw new MojoExecutionException("Unable to generate java source.", ex);
+        } catch (NullPointerException ex) {
             throw new MojoExecutionException("Unable to generate java source.", ex);
         }
 
@@ -78,10 +80,10 @@ public class BindingGeneratorMojo extends AbstractMojo {
 
     // Package-private access for junit tests only
     /**
-     * @param destRoot the destRoot to set
+     * @param outputDirectory the outputDirectory to set
      */
-    void setDestRoot(File destRoot) {
-        this.destRoot = destRoot;
+    void setOutputDirectory(File outputDirectory) {
+        this.outputDirectory = outputDirectory;
     }
 
     /**
