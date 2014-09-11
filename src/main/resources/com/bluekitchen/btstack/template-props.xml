@@ -29,8 +29,7 @@ public class {1} extends BTstackClient '{'
     <entry key="footer">
 '}'
     </entry>
-    <entry key="event_factory">
-package {0};
+    <entry key="event_factory">package {0};
 
 import {0}.event.*;
 
@@ -77,6 +76,10 @@ public class {1} extends Event '{'
     }
     {2}
     {3}
+        
+    public void handle(EventHandler handler) '{'
+        handler.handle{1}(this);
+    }
 }        
     </entry>
     <entry key="event_getter">
@@ -85,7 +88,7 @@ public class {1} extends Event '{'
     }
     </entry>
     <entry key="event_getter_data">
-int len = get{0}();
+        int len = get{0}();
         byte[] result = new byte[len];
         System.arraycopy(data, {1}, result, 0, len);
         return result;</entry>
@@ -103,8 +106,21 @@ int len = get{0}();
     <entry key="define_string">    public static final int {0} = {1};
 </entry>
 <entry key="event_getter_remaining_data">
-int len = getPayloadLen() - {0};
+        int len = getPayloadLen() - {0};
         byte[] result = new byte[len];
         System.arraycopy(data, {0}, result, 0, len);
         return result;</entry>
+<entry key="event_handler_header">package {0};
+
+import {1}.Event;
+
+/**
+ * This interface allows double-dispatching from the Event class.
+ */
+public interface EventHandler '{'
+    
+    public void handleEvent(Event event);
+</entry>
+<entry key="event_handler_handle_decl">    public void handle{0}({0} event);
+</entry>
 </properties>

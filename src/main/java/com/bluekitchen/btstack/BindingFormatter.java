@@ -45,6 +45,8 @@ public class BindingFormatter {
         event_to_string,
         define_string,
         event_getter_remaining_data,
+        event_handler_header,
+        event_handler_handle_decl,
     }
 
     private final Map<String, String> btStackType2JavaType;
@@ -242,6 +244,18 @@ public class BindingFormatter {
             StringJoiner<String> joiner = new StringJoiner<>();
             String definesText = joiner.join(stuff, "\n", false);
             writeToWriter(writer, formatters.get(Keys.event_factory), PACKAGE, definesText, cases, subcases);
+        }
+        // Create the EventHandler interface.
+        File handlerFile = createFile(EVENT_PACKAGE, "EventHandler");
+        try (FileWriter writer = new FileWriter(handlerFile)) {
+            writeToWriter(writer, formatters.get(Keys.event_handler_header), EVENT_PACKAGE, PACKAGE);
+            for (EventInfo ei : ep.getEventIterable()) {
+                writeToWriter(writer, formatters.get(Keys.event_handler_handle_decl), NameUtilities.getInstance().camelCase(ei.getKey()));
+            }
+            for (EventInfo lei : ep.getLeEventIterable()) {
+                writeToWriter(writer, formatters.get(Keys.event_handler_handle_decl), NameUtilities.getInstance().camelCase(lei.getKey()));
+            }
+            writeToWriter(writer, formatters.get(Keys.footer).toPattern());
         }
     }
     
